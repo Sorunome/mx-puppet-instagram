@@ -1,0 +1,28 @@
+{
+  "name": "mx-puppet-instagram",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tslint --project ./tsconfig.json -t stylish",
+    "start": "npm run-script build && node ./build/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sorunome",
+  "dependencies": {
+    "command-line-args": "^5.1.1",
+    "command-line-usage": "^5.0.5",
+    "escape-html": "^1.0.3",
+    "events": "^3.0.0",
+    "instagram-private-api": "^1.14.1",
+    "js-yaml": "^3.13.1",
+    "mx-puppet-bridge": "^0.0.10-3",
+    "node-html-parser": "^1.1.15",
+    "tslint": "^5.17.0",
+    "typescript": "^3.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.8"
+  }
+}
