@@ -1,15 +1,27 @@
 import { Log } from "mx-puppet-bridge";
 import { IgApiClient, DirectInboxFeed } from "instagram-private-api";
 import { EventEmitter } from "events";
+import * as Jimp from "jimp";
 
 const log = new Log("InstagramPuppet:client");
 
 export class Client extends EventEmitter {
+	private backoffIntervals = [
+		500, 500, 500, 500, 500, 500, 500, 500, 500, 500, // 5 seconds
+		1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, // 8 seconds
+		2000, 2000, 2000, 2000, 2000, 2000, // 12 seconds
+		3000, 3000, 3000, 3000, 3000, // 15 seconds
+		4000, 4000, 4000, 4000, 4000, // 20 seconds
+		5000, 5000, 5000, 5000, 5000, // 25 seconds
+		7500, 7500, 7500, 7500, 7500,
+		10000,
+	];
+	private currBackoff: number = 0;
 	private ig: IgApiClient;
 	private inboxFeed: DirectInboxFeed;
 	private timeout: NodeJS.Timeout | null;
 	private disconnecting: boolean;
-	private lastThreadMessages: { [threadId: string]: Number };
+	private lastThreadMessages: { [threadId: string]: number };
 	private users: { [userId: string]: any };
 	private sentEvents: string[];
 	constructor(
@@ -17,6 +29,7 @@ export class Client extends EventEmitter {
 		private password: string,
 	) {
 		super();
+		this.currBackoff = 0;
 		this.ig = new IgApiClient();
 		this.timeout = null;
 		this.disconnecting = false;
@@ -29,7 +42,6 @@ export class Client extends EventEmitter {
 		this.ig.state.generateDevice(this.username);
 		await this.ig.simulate.preLoginFlow();
 		const auth = await this.ig.account.login(this.username, this.password);
-		log.silly(auth);
 		this.users[auth.pk.toString()] = {
 			userId: auth.pk.toString(),
 			name: auth.full_name,
@@ -66,7 +78,32 @@ export class Client extends EventEmitter {
 		return ret.item_id;
 	}
 
-	private igTsToNormal(ts: string): Number {
+	public async sendPhoto(threadId: string, file: Buffer): Promise<string | null> {
+		const image = await Jimp.read(file);
+		image.rgba(false).background(0xFFFFFFFF);
+		const jpg = await image.getBufferAsync(Jimp.MIME_JPEG);
+		const thread = this.ig.entity.directThread(threadId);
+		const ret = await thread.broadcastPhoto({
+			file: jpg,
+		});
+		if (!ret) {
+			return null;
+		}
+		this.sentEvents.push(ret.item_id);
+		return ret.item_id;
+	}
+
+	public async sendLink(threadId: string, name: string, url: string): Promise<string | null> {
+		const thread = this.ig.entity.directThread(threadId);
+		const ret = await thread.broadcastLink(name, [url]);
+		if (!ret) {
+			return null;
+		}
+		this.sentEvents.push(ret.item_id);
+		return ret.item_id;
+	}
+
+	private igTsToNormal(ts: string): number {
 		// instagram TS's are in microseconds
 		return parseInt(ts.substring(0, ts.length - 3));
 	}
@@ -74,6 +111,7 @@ export class Client extends EventEmitter {
 	private async singleUpdate() {
 		const threads = await this.inboxFeed.items();
 		log.silly("=======");
+		let processedMessage = false;
 		for (const thread of threads) {
 			// first we update users accordingly
 			for (const user of thread.users) {
@@ -114,6 +152,7 @@ export class Client extends EventEmitter {
 					}
 				} else {
 					// we have a new message!!!!
+					processedMessage = true;
 					const event = {
 						eventId: item.item_id,
 						userId: item.user_id.toString(),
@@ -149,9 +188,17 @@ export class Client extends EventEmitter {
 				this.lastThreadMessages[threadId] = ts;
 			}
 		}
-		// TODO: back-away logic
+
 		if (!this.disconnecting) {
-			this.timeout = setTimeout(this.singleUpdate.bind(this), 5000);
+			// backoff logic
+			if (!processedMessage) {
+				if (this.currBackoff < this.backoffIntervals.length - 1) {
+					this.currBackoff++;
+				}
+			} else {
+				this.currBackoff = 0;
+			}
+			this.timeout = setTimeout(this.singleUpdate.bind(this), this.backoffIntervals[this.currBackoff]);
 		}
 	}
 }

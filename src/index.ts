@@ -41,7 +41,8 @@ if (options.help) {
 }
 
 const features = {
-//	file: true, // no need for the others as we auto-detect types anyways
+	image: true,
+	file: true,
 //	presence: true,
 //	typingTimeout: 5500,
 } as IPuppetBridgeFeatures;
@@ -70,6 +71,7 @@ async function run() {
 	puppet.on("puppetNew", ig.newPuppet.bind(ig));
 	puppet.on("puppetDelete", ig.deletePuppet.bind(ig));
 	puppet.on("message", ig.handleMatrixMessage.bind(ig));
+	puppet.on("image", ig.handleMatrixImage.bind(ig));
 	puppet.on("file", ig.handleMatrixFile.bind(ig));
 	puppet.setCreateUserHook(ig.createUser.bind(ig));
 	puppet.setBotHeaderMsgHook((): string => {

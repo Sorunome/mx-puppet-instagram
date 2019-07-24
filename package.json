@@ -16,6 +16,7 @@
     "escape-html": "^1.0.3",
     "events": "^3.0.0",
     "instagram-private-api": "^1.14.1",
+    "jimp": "^0.6.4",
     "js-yaml": "^3.13.1",
     "mx-puppet-bridge": "^0.0.10-3",
     "node-html-parser": "^1.1.15",

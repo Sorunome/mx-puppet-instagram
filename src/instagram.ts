@@ -118,7 +118,30 @@ export class Instagram {
 		}
 	}
 
+	public async handleMatrixImage(room: IRemoteChan, data: IFileEvent, event: any) {
+		const p = this.puppets[room.puppetId];
+		if (!p) {
+			return;
+		}
+		log.verbose("Got image to send on");
+		const buffer = await Util.DownloadFile(data.url);
+		const eventId = await p.client.sendPhoto(room.roomId, buffer);
+		if (eventId) {
+			await this.puppet.eventStore.insert(room.puppetId, data.eventId!, eventId);
+		}
+	}
+
 	public async handleMatrixFile(room: IRemoteChan, data: IFileEvent, event: any) {
-		
+		const p = this.puppets[room.puppetId];
+		if (!p) {
+			return;
+		}
+		log.verbose("Got file to send on");
+		const url = data.url.replace("http://localhost", "https://example.com");
+		const name = data.filename;
+		const eventId = await p.client.sendLink(room.roomId, name, url);
+		if (eventId) {
+			await this.puppet.eventStore.insert(room.puppetId, data.eventId!, eventId);
+		}
 	}
 }
