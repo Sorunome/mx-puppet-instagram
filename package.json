@@ -18,7 +18,7 @@
     "instagram-private-api": "^1.14.1",
     "jimp": "^0.6.4",
     "js-yaml": "^3.13.1",
-    "mx-puppet-bridge": "^0.0.10-4",
+    "mx-puppet-bridge": "^0.0.10-5",
     "node-html-parser": "^1.1.15",
     "tslint": "^5.17.0",
     "typescript": "^3.5.2"

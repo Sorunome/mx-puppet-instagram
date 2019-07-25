@@ -78,7 +78,7 @@ async function run() {
 		const retData = {
 			success: false,
 		} as IRetData;
-		const parts = str.trim().split(" ");
+		const parts = str.split(" ");
 		if (parts.length < 2) {
 			retData.error = "Please specify both username and password";
 			return retData;
