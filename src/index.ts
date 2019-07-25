@@ -74,6 +74,22 @@ async function run() {
 	puppet.on("image", ig.handleMatrixImage.bind(ig));
 	puppet.on("file", ig.handleMatrixFile.bind(ig));
 	puppet.setCreateUserHook(ig.createUser.bind(ig));
+	puppet.setGetDastaFromStrHook(async (str: string): Promise<IRetData> => {
+		const retData = {
+			success: false,
+		} as IRetData;
+		const parts = str.trim().split(" ");
+		if (parts.length < 2) {
+			retData.error = "Please specify both username and password";
+			return retData;
+		}
+		retData.success = true;
+		retData.data = {
+			username: parts[0],
+			password: parts[1],
+		};
+		return retData;
+	});
 	puppet.setBotHeaderMsgHook((): string => {
 		return "Instagram Puppet Bridge";
 	});

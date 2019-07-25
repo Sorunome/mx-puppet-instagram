@@ -74,6 +74,9 @@ export class Instagram {
 			client,
 			data,
 		} as IInstagramPuppet;
+		client.on("auth", async (user: any) => {
+			await this.puppet.setUserId(puppetId, user.userId);
+		});
 		client.on("message", async (msg: any) => {
 			log.verbose("Got message to pass on", msg);
 			const params = this.getSendParams(puppetId, msg);

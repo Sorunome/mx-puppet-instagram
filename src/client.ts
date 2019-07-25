@@ -42,11 +42,13 @@ export class Client extends EventEmitter {
 		this.ig.state.generateDevice(this.username);
 		await this.ig.simulate.preLoginFlow();
 		const auth = await this.ig.account.login(this.username, this.password);
-		this.users[auth.pk.toString()] = {
+		const authUser = {
 			userId: auth.pk.toString(),
 			name: auth.full_name,
 			avatar: auth.profile_pic_url,
 		};
+		this.users[authUser.userId] = authUser;
+		this.emit("auth", authUser);
 		this.inboxFeed = await this.ig.feed.directInbox();
 		// do in background
 		this.singleUpdate();
@@ -109,84 +111,88 @@ export class Client extends EventEmitter {
 	}
 
 	private async singleUpdate() {
-		const threads = await this.inboxFeed.items();
-		log.silly("=======");
 		let processedMessage = false;
-		for (const thread of threads) {
-			// first we update users accordingly
-			for (const user of thread.users) {
-				const newUser = {
-					userId: user.pk.toString(),
-					name: user.full_name,
-					avatar: user.profile_pic_url,
-				};
-				const oldUser = this.users[newUser.userId];
-				if (oldUser) {
-					if (newUser.name !== oldUser.name || newUser.avatar !== oldUser.avatar) {
-						this.emit("userupdate", newUser);
+		try {
+			const threads = await this.inboxFeed.items();
+			log.silly("=======");
+			for (const thread of threads) {
+				// first we update users accordingly
+				for (const user of thread.users) {
+					const newUser = {
+						userId: user.pk.toString(),
+						name: user.full_name,
+						avatar: user.profile_pic_url,
+					};
+					const oldUser = this.users[newUser.userId];
+					if (oldUser) {
+						if (newUser.name !== oldUser.name || newUser.avatar !== oldUser.avatar) {
+							this.emit("userupdate", newUser);
+							this.users[newUser.userId] = newUser;
+						}
+					} else {
 						this.users[newUser.userId] = newUser;
 					}
-				} else {
-					this.users[newUser.userId] = newUser;
 				}
-			}
-
-			const threadId = thread.thread_id;
-			const oldTs = this.lastThreadMessages[threadId];
-			if (!oldTs) {
-				this.lastThreadMessages[threadId] = thread.items[0] ? this.igTsToNormal(thread.items[0].timestamp) : 0;
-				continue;
-			}
-			thread.items.reverse(); // we want to process the oldest one first
-			for (const item of thread.items as any[]) {
-				const ts = this.igTsToNormal(item.timestamp);
-				if (oldTs >= ts) {
+				
+				const threadId = thread.thread_id;
+				const oldTs = this.lastThreadMessages[threadId];
+				if (!oldTs) {
+					this.lastThreadMessages[threadId] = thread.items[0] ? this.igTsToNormal(thread.items[0].timestamp) : 0;
 					continue;
 				}
-				if (this.sentEvents.includes(item.item_id)) {
-					// duplicate, ignore
-					// remove the entry from the array because, well it is unneeded now
-					const ix = this.sentEvents.indexOf(item.item_id);
-					if (ix !== -1) {
-						this.sentEvents.splice(ix, 1);
+				thread.items.reverse(); // we want to process the oldest one first
+				for (const item of thread.items as any[]) {
+					const ts = this.igTsToNormal(item.timestamp);
+					if (oldTs >= ts) {
+						continue;
 					}
-				} else {
-					// we have a new message!!!!
-					processedMessage = true;
-					const event = {
-						eventId: item.item_id,
-						userId: item.user_id.toString(),
-						threadId,
-						isPrivate: thread.thread_type === "private",
-						threadTitle: thread.thread_title,
-					} as any;
-					switch (item.item_type) {
-						case "text":
-							event.text = item.text;
-							this.emit("message", event);
-							break;
-						case "media":
-							event.url = item.media.image_versions2.candidates[0].url;
-							this.emit("file", event);
-							break;
-						case "voice_media":
-							event.url = item.voice_media.media.audio.audio_src;
-							this.emit("file", event);
-							break;
-						case "like":
-							event.text = item.like;
-							this.emit("message", event);
-							break;
-						case "animated_media":
-							event.url = item.animated_media.images.fixed_height.url;
-							this.emit("file", event);
-							break;
-						default:
-							log.silly("Unknown item type", item);
+					if (this.sentEvents.includes(item.item_id)) {
+						// duplicate, ignore
+						// remove the entry from the array because, well it is unneeded now
+						const ix = this.sentEvents.indexOf(item.item_id);
+						if (ix !== -1) {
+							this.sentEvents.splice(ix, 1);
+						}
+					} else {
+						// we have a new message!!!!
+						processedMessage = true;
+						const event = {
+							eventId: item.item_id,
+							userId: item.user_id.toString(),
+							threadId,
+							isPrivate: thread.thread_type === "private",
+							threadTitle: thread.thread_title,
+						} as any;
+						switch (item.item_type) {
+							case "text":
+								event.text = item.text;
+								this.emit("message", event);
+								break;
+							case "media":
+								event.url = item.media.image_versions2.candidates[0].url;
+								this.emit("file", event);
+								break;
+							case "voice_media":
+								event.url = item.voice_media.media.audio.audio_src;
+								this.emit("file", event);
+								break;
+							case "like":
+								event.text = item.like;
+								this.emit("message", event);
+								break;
+							case "animated_media":
+								event.url = item.animated_media.images.fixed_height.url;
+								this.emit("file", event);
+								break;
+							default:
+								log.silly("Unknown item type", item);
+						}
 					}
+					this.lastThreadMessages[threadId] = ts;
 				}
-				this.lastThreadMessages[threadId] = ts;
 			}
+		} catch (err) {
+			log.error("Error updating from instagram:", err);
 		}
 
 		if (!this.disconnecting) {
