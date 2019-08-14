@@ -69,7 +69,7 @@ export class Instagram {
 		if (this.puppets[puppetId]) {
 			await this.deletePuppet(puppetId);
 		}
-		const client = new Client(data.username, data.password);
+		const client = new Client(data.sessionid, data.username, data.password);
 		this.puppets[puppetId] = {
 			client,
 			data,

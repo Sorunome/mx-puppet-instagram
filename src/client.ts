@@ -2,6 +2,7 @@ import { Log } from "mx-puppet-bridge";
 import { IgApiClient, DirectInboxFeed } from "instagram-private-api";
 import { EventEmitter } from "events";
 import * as Jimp from "jimp";
+import { Cookie } from "tough-cookie";
 
 const log = new Log("InstagramPuppet:client");
 
@@ -25,8 +26,9 @@ export class Client extends EventEmitter {
 	private users: { [userId: string]: any };
 	private sentEvents: string[];
 	constructor(
-		private username: string,
-		private password: string,
+		private sessionid: string,
+		private username?: string,
+		private password?: string,
 	) {
 		super();
 		this.currBackoff = 0;
@@ -39,9 +41,33 @@ export class Client extends EventEmitter {
 	}
 
 	public async connect() {
-		this.ig.state.generateDevice(this.username);
-		await this.ig.simulate.preLoginFlow();
-		const auth = await this.ig.account.login(this.username, this.password);
+		if (this.sessionid) {
+			const cookies = { 
+				storeType: 'MemoryCookieStore',
+				rejectPublicSuffixes: true,
+				cookies: [
+					new Cookie({
+						key: "sessionid",
+						value: this.sessionid,
+						domain: "instagram.com",
+						path: "/",
+		 				secure: true,
+		 				httpOnly: true,
+		 				hostOnly: false,
+						maxAge: 31536000,
+						creation: new Date(),
+					}),
+				]
+			};
+			await this.ig.state.deserializeCookieJar(JSON.stringify(cookies));
+		} else if (this.username && this.password) {
+			this.ig.state.generateDevice(this.username);
+			await this.ig.simulate.preLoginFlow();
+			await this.ig.account.login(this.username, this.password);
+		} else {
+			throw new Error("no login method provided")
+		}
+		const auth = await this.ig.account.currentUser();
 		const authUser = {
 			userId: auth.pk.toString(),
 			name: auth.full_name,

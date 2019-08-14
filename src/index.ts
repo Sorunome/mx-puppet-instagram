@@ -84,10 +84,16 @@ async function run() {
 			return retData;
 		}
 		retData.success = true;
-		retData.data = {
-			username: parts[0],
-			password: parts[1],
-		};
+		if (parts[0] === "sessionid") {
+			retData.data = {
+				sessionid: parts[1],
+			};
+		} else {
+			retData.data = {
+				username: parts[0],
+				password: parts[1],
+			};
+		}
 		return retData;
 	});
 	puppet.setBotHeaderMsgHook((): string => {
