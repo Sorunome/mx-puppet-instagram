@@ -1,5 +1,5 @@
 import { Log } from "mx-puppet-bridge";
-import { IgApiClient, DirectInboxFeed } from "instagram-private-api";
+import { IgApiClient, DirectInboxFeed, IgLoginRequiredError } from "instagram-private-api";
 import { EventEmitter } from "events";
 import * as Jimp from "jimp";
 import { Cookie } from "tough-cookie";
@@ -72,6 +72,7 @@ export class Client extends EventEmitter {
 			userId: auth.pk.toString(),
 			name: auth.full_name,
 			avatar: auth.profile_pic_url,
+			avatarId: auth.profile_pic_id,
 		};
 		this.users[authUser.userId] = authUser;
 		this.emit("auth", authUser);
@@ -148,10 +149,15 @@ export class Client extends EventEmitter {
 						userId: user.pk.toString(),
 						name: user.full_name,
 						avatar: user.profile_pic_url,
+						avatarId: user.profile_pic_id,
 					};
 					const oldUser = this.users[newUser.userId];
 					if (oldUser) {
-						if (newUser.name !== oldUser.name || newUser.avatar !== oldUser.avatar) {
+						// okay, the problem is that instagram changes the avatar url
+						// on every single message sent, so we have nothing
+						// to keep track of the actual avatar without uploading tons of duplicates
+						// so instead, we need to check for a change in the avatarId
+						if (newUser.name !== oldUser.name || newUser.avatarId !== oldUser.avatarId) {
 							this.emit("userupdate", newUser);
 							this.users[newUser.userId] = newUser;
 						}
@@ -218,6 +224,9 @@ export class Client extends EventEmitter {
 				}
 			}
 		} catch (err) {
+			if (err instanceof IgLoginRequiredError) {
+				// TODO: panic
+			}
 			log.error("Error updating from instagram:", err);
 		}
 
