@@ -147,7 +147,6 @@ export class Client extends EventEmitter {
 		let processedMessage = false;
 		try {
 			const threads = await this.inboxFeed.items();
-			log.silly("=======");
 			for (const thread of threads) {
 				// first we update users accordingly
 				for (const user of thread.users) {
@@ -205,6 +204,10 @@ export class Client extends EventEmitter {
 							case "text":
 								event.text = item.text;
 								this.emit("message", event);
+								break;
+							case "reel_share":
+								event.text = item.reel_share.text;
+								this.emit("reel_share", event, item.reel_share);
 								break;
 							case "media":
 								event.url = item.media.image_versions2.candidates[0].url;

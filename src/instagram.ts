@@ -9,6 +9,7 @@ import {
 	Util,
 } from "mx-puppet-bridge";
 import { Client } from "./client";
+import * as escapeHtml from "escape-html";
 
 const log = new Log("InstagramPuppet:instagram");
 
@@ -78,6 +79,7 @@ export class Instagram {
 			const d = this.puppets[puppetId].data;
 			d.username = auth.username;
 			d.name = user.name;
+			d.userId = user.userId;
 			await this.puppet.setUserId(puppetId, user.userId);
 			await this.puppet.setPuppetData(puppetId, d);
 			await this.puppet.sendStatusMessage(puppetId, "connected!");
@@ -85,6 +87,21 @@ export class Instagram {
 		client.on("message", async (msg: any) => {
 			log.verbose("Got message to pass on", msg);
 			const params = this.getSendParams(puppetId, msg);
+			await this.puppet.sendMessage(params, {
+				body: msg.text,
+			});
+		});
+		client.on("reel_share", async (msg: any, share: any) => {
+			log.verbose("Got share to pass on", msg);
+			const imgUrl = share.media.image_versions2.candidates[0].url;
+
+			const pronoun = share.media.user.pk === this.puppets[puppetId].data.userId ? "your" : "their";
+
+			const params = this.getSendParams(puppetId, msg);
+			await this.puppet.sendMessage(params, {
+				body: `New reply to ${pronoun} story:`,
+			});
+			await this.puppet.sendFileDetect(params, imgUrl);
 			await this.puppet.sendMessage(params, {
 				body: msg.text,
 			});
