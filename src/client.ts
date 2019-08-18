@@ -7,6 +7,7 @@ import { Cookie } from "tough-cookie";
 const log = new Log("InstagramPuppet:client");
 
 export class Client extends EventEmitter {
+	// tslint:disable:no-magic-numbers
 	private backoffIntervals = [
 		500, 500, 500, 500, 500, 500, 500, 500, 500, 500, // 5 seconds
 		1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, // 8 seconds
@@ -17,6 +18,7 @@ export class Client extends EventEmitter {
 		7500, 7500, 7500, 7500, 7500,
 		10000,
 	];
+	// tslint:enable:no-magic-numbers
 	private currBackoff: number = 0;
 	private ig: IgApiClient;
 	private inboxFeed: DirectInboxFeed;
@@ -42,8 +44,8 @@ export class Client extends EventEmitter {
 
 	public async connect() {
 		if (this.sessionid) {
-			const cookies = { 
-				storeType: 'MemoryCookieStore',
+			const cookies = {
+				storeType: "MemoryCookieStore",
 				rejectPublicSuffixes: true,
 				cookies: [
 					new Cookie({
@@ -51,13 +53,13 @@ export class Client extends EventEmitter {
 						value: this.sessionid,
 						domain: "instagram.com",
 						path: "/",
-		 				secure: true,
-		 				httpOnly: true,
-		 				hostOnly: false,
+						secure: true,
+						httpOnly: true,
+						hostOnly: false,
 						maxAge: 31536000,
 						creation: new Date(),
 					}),
-				]
+				],
 			};
 			await this.ig.state.deserializeCookieJar(JSON.stringify(cookies));
 		} else if (this.username && this.password) {
@@ -65,9 +67,10 @@ export class Client extends EventEmitter {
 			await this.ig.simulate.preLoginFlow();
 			await this.ig.account.login(this.username, this.password);
 		} else {
-			throw new Error("no login method provided")
+			throw new Error("no login method provided");
 		}
 		const auth = await this.ig.account.currentUser();
+		log.verbose(auth);
 		const authUser = {
 			userId: auth.pk.toString(),
 			name: auth.full_name,
@@ -75,9 +78,10 @@ export class Client extends EventEmitter {
 			avatarId: auth.profile_pic_id,
 		};
 		this.users[authUser.userId] = authUser;
-		this.emit("auth", authUser);
-		this.inboxFeed = await this.ig.feed.directInbox();
+		this.emit("auth", authUser, auth);
+		this.inboxFeed = this.ig.feed.directInbox();
 		// do in background
+		// tslint:disable-next-line:no-floating-promises
 		this.singleUpdate();
 	}
 
@@ -109,7 +113,8 @@ export class Client extends EventEmitter {
 
 	public async sendPhoto(threadId: string, file: Buffer): Promise<string | null> {
 		const image = await Jimp.read(file);
-		image.rgba(false).background(0xFFFFFFFF);
+		const WHITE = 0xFFFFFFFF;
+		image.rgba(false).background(WHITE);
 		const jpg = await image.getBufferAsync(Jimp.MIME_JPEG);
 		const thread = this.ig.entity.directThread(threadId);
 		const ret = await thread.broadcastPhoto({
@@ -134,7 +139,8 @@ export class Client extends EventEmitter {
 
 	private igTsToNormal(ts: string): number {
 		// instagram TS's are in microseconds
-		return parseInt(ts.substring(0, ts.length - 3));
+		const MICRO_TO_MILLI = 3;
+		return parseInt(ts.substring(0, ts.length - MICRO_TO_MILLI), 10);
 	}
 
 	private async singleUpdate() {
@@ -165,7 +171,7 @@ export class Client extends EventEmitter {
 						this.users[newUser.userId] = newUser;
 					}
 				}
-				
+
 				const threadId = thread.thread_id;
 				const oldTs = this.lastThreadMessages[threadId];
 				if (!oldTs) {
@@ -225,7 +231,10 @@ export class Client extends EventEmitter {
 			}
 		} catch (err) {
 			if (err instanceof IgLoginRequiredError) {
-				// TODO: panic
+				// we aren't logged in anymore, somehow. Please stand by while we panic
+				this.emit("logout");
+				await this.disconnect();
+				return;
 			}
 			log.error("Error updating from instagram:", err);
 		}

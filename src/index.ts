@@ -45,8 +45,6 @@ if (options.help) {
 const features = {
 	image: true,
 	file: true,
-//	presence: true,
-//	typingTimeout: 5500,
 } as IPuppetBridgeFeatures;
 
 const puppet = new PuppetBridge(options["registration-file"], options.config, features);
@@ -76,12 +74,31 @@ async function run() {
 	puppet.on("image", ig.handleMatrixImage.bind(ig));
 	puppet.on("file", ig.handleMatrixFile.bind(ig));
 	puppet.setCreateUserHook(ig.createUser.bind(ig));
+	puppet.setGetDescHook(async (puppetId: number, data: any, html: boolean): Promise<string> => {
+		let s = "Instagram";
+		if (data.name) {
+			if (html) {
+				s += ` as <code>${escapeHtml(data.name)}</code>`;
+			} else {
+				s += ` as ${data.name}`;
+			}
+		}
+		if (data.username) {
+			if (html) {
+				s += ` (<code>${escapeHtml(data.username)}</code>)`;
+			} else {
+				s += ` (${data.username})`;
+			}
+		}
+		return s;
+	});
 	puppet.setGetDastaFromStrHook(async (str: string): Promise<IRetData> => {
 		const retData = {
 			success: false,
 		} as IRetData;
 		const parts = str.split(" ");
-		if (parts.length < 2) {
+		const PARTS_SIZE = 2;
+		if (parts.length < PARTS_SIZE) {
 			retData.error = "Please specify both username and password";
 			return retData;
 		}
@@ -103,8 +120,8 @@ async function run() {
 		};
 		if (parts[0] === "sessionid") {
 			const sessionid = parts[1];
-			const cookies = { 
-				storeType: 'MemoryCookieStore',
+			const cookies = {
+				storeType: "MemoryCookieStore",
 				rejectPublicSuffixes: true,
 				cookies: [
 					new Cookie({
@@ -112,13 +129,13 @@ async function run() {
 						value: sessionid,
 						domain: "instagram.com",
 						path: "/",
-		 				secure: true,
-		 				httpOnly: true,
-		 				hostOnly: false,
+						secure: true,
+						httpOnly: true,
+						hostOnly: false,
 						maxAge: 31536000,
 						creation: new Date(),
 					}),
-				]
+				],
 			};
 			await igc.state.deserializeCookieJar(JSON.stringify(cookies));
 		} else {
@@ -137,16 +154,16 @@ async function run() {
 					log.verbose("Requesting 2fa token");
 					log.verbose(igc.state.checkpoint); // Checkpoint info here
 					await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
-					console.log(igc.state.checkpoint); // Challenge info here
+					log.verbose(igc.state.checkpoint); // Challenge info here
 					retData.error = "Please enter your 2fa code:";
 					retData.fn = async (code: string) => {
 						const newRetData = {
 							success: false,
 						} as IRetData;
 						log.verbose(code);
-						
-						const ret = await igc.challenge.sendSecurityCode(code)
-						
+
+						const ret = await igc.challenge.sendSecurityCode(code);
+
 						log.verbose(ret);
 						return await getSessionCookie(newRetData);
 					};

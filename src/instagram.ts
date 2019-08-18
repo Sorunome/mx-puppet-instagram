@@ -18,7 +18,7 @@ interface IInstagramPuppet {
 }
 
 interface IInstagramPuppets {
-    [puppetId: number] :IInstagramPuppet;
+	[puppetId: number]: IInstagramPuppet;
 }
 
 export class Instagram {
@@ -74,8 +74,13 @@ export class Instagram {
 			client,
 			data,
 		} as IInstagramPuppet;
-		client.on("auth", async (user: any) => {
+		client.on("auth", async (user: any, auth: any) => {
+			const d = this.puppets[puppetId].data;
+			d.username = auth.username;
+			d.name = user.name;
 			await this.puppet.setUserId(puppetId, user.userId);
+			await this.puppet.setPuppetData(puppetId, d);
+			await this.puppet.sendStatusMessage(puppetId, "connected!");
 		});
 		client.on("message", async (msg: any) => {
 			log.verbose("Got message to pass on", msg);
@@ -96,7 +101,11 @@ export class Instagram {
 				name: user.name,
 				avatarUrl: user.avatar,
 			});
-		})
+		});
+		client.on("logout", async () => {
+			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
+				` Please use \`relink ${puppetId} <username> <password\` to log in again!`);
+		});
 		await client.connect();
 	}
 
