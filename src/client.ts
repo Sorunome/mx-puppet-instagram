@@ -209,6 +209,9 @@ export class Client extends EventEmitter {
 								event.text = item.reel_share.text;
 								this.emit("reel_share", event, item.reel_share);
 								break;
+							case "media_share":
+								this.emit("media_share", event, item.media_share);
+								break;
 							case "media":
 								event.url = item.media.image_versions2.candidates[0].url;
 								this.emit("file", event);

@@ -103,7 +103,22 @@ export class Instagram {
 			});
 			await this.puppet.sendFileDetect(params, imgUrl);
 			await this.puppet.sendMessage(params, {
-				body: msg.text,
+				body: "> " + msg.text,
+				formattedBody: `<blockquote>${escapeHtml(msg.text)}</blockquote>`,
+			});
+		});
+		client.on("media_share", async (msg: any, share: any) => {
+			log.verbose("Got a media share to pass on");
+			const imgUrl = share.image_versions2.candidates[0].url;
+			const params = this.getSendParams(puppetId, msg);
+
+			await this.puppet.sendMessage(params, {
+				body: "New media has been shared:",
+			});
+			await this.puppet.sendFileDetect(params, imgUrl);
+			await this.puppet.sendMessage(params, {
+				body: "> " + share.caption.text,
+				formattedBody: `<blockquote>${escapeHtml(share.caption.text)}</blockquote>`,
 			});
 		});
 		client.on("file", async (msg: any) => {
