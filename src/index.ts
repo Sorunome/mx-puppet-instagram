@@ -8,7 +8,6 @@ import {
 import * as commandLineArgs from "command-line-args";
 import * as commandLineUsage from "command-line-usage";
 import { Instagram } from "./instagram";
-import * as escapeHtml from "escape-html";
 import { IgApiClient, IgCheckpointError } from "instagram-private-api";
 import { Cookie } from "tough-cookie";
 
@@ -74,21 +73,13 @@ async function run() {
 	puppet.on("image", ig.handleMatrixImage.bind(ig));
 	puppet.on("file", ig.handleMatrixFile.bind(ig));
 	puppet.setCreateUserHook(ig.createUser.bind(ig));
-	puppet.setGetDescHook(async (puppetId: number, data: any, html: boolean): Promise<string> => {
+	puppet.setGetDescHook(async (puppetId: number, data: any): Promise<string> => {
 		let s = "Instagram";
 		if (data.name) {
-			if (html) {
-				s += ` as <code>${escapeHtml(data.name)}</code>`;
-			} else {
-				s += ` as ${data.name}`;
-			}
+			s += ` as ${data.name}`;
 		}
 		if (data.username) {
-			if (html) {
-				s += ` (<code>${escapeHtml(data.username)}</code>)`;
-			} else {
-				s += ` (${data.username})`;
-			}
+			s += ` (${data.username})`;
 		}
 		return s;
 	});
