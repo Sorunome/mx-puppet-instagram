@@ -138,7 +138,14 @@ export class Instagram {
 			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
 				` Please use \`relink ${puppetId} <username> <password\` to log in again!`);
 		});
-		await client.connect();
+		try {
+			await client.connect();
+		} catch (err) {
+			log.warn("Failed to connect to client", err);
+			await this.puppet.sendStatusMessage(puppetId, err);
+			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
+				` Please use \`relink ${puppetId} <username> <password\` to log in again!`);
+		}
 	}
 
 	public async deletePuppet(puppetId: number) {

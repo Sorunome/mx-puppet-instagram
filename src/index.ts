@@ -8,8 +8,9 @@ import {
 import * as commandLineArgs from "command-line-args";
 import * as commandLineUsage from "command-line-usage";
 import { Instagram } from "./instagram";
-import { IgApiClient, IgCheckpointError } from "instagram-private-api";
+import { IgApiClient, IgCheckpointError, IgLoginTwoFactorRequiredError } from "instagram-private-api";
 import { Cookie } from "tough-cookie";
+import { get } from "lodash";
 
 const log = new Log("InstagramPuppet:index");
 
@@ -140,12 +141,32 @@ async function run() {
 				await igc.account.currentUser();
 				log.verbose(auth);
 			} catch (err) {
+				log.verbose("===========");
 				log.verbose(err);
 				if (err instanceof IgCheckpointError) {
-					log.verbose("Requesting 2fa token");
+					log.verbose("Requesting \"it was me\" button");
 					log.verbose(igc.state.checkpoint); // Checkpoint info here
 					await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
 					log.verbose(igc.state.checkpoint); // Challenge info here
+					retData.error = "Please send a message after you hit the \"it was me\" button:";
+					retData.fn = async (message: string) => {
+						const newRetData = {
+							success: false,
+						} as IRetData;
+
+						const ret = await igc.account.login(username, password);
+
+						log.verbose(ret);
+						return await getSessionCookie(newRetData);
+					};
+					return retData;
+				} else if (err instanceof IgLoginTwoFactorRequiredError) {
+					log.verbose("Requesting 2fa token");
+					const twoFactorIdentifier = get(err, "response.body.two_factor_info.two_factor_identifier");
+					if (!twoFactorIdentifier) {
+						retData.error = "Unable to login, no 2fa identifier found";
+						return retData;
+					}
 					retData.error = "Please enter your 2fa code:";
 					retData.fn = async (code: string) => {
 						const newRetData = {
@@ -153,10 +174,33 @@ async function run() {
 						} as IRetData;
 						log.verbose(code);
 
-						const ret = await igc.challenge.sendSecurityCode(code);
 
-						log.verbose(ret);
-						return await getSessionCookie(newRetData);
+						try {
+							let ret;
+							try {
+								// first try if this is SMS login
+								ret = await igc.account.twoFactorLogin({
+									username,
+									verificationCode: code,
+									twoFactorIdentifier,
+									verificationMethod: "1",
+								});
+							} catch (e) {
+								// then try if this is OTP login
+								ret = await igc.account.twoFactorLogin({
+									username,
+									verificationCode: code,
+									twoFactorIdentifier,
+									verificationMethod: "0",
+								});
+							}
+							log.verbose(ret);
+							return await getSessionCookie(newRetData);
+						} catch (err) {
+							log.warn(err);
+							newRetData.error = err;
+							return newRetData;
+						}
 					};
 					return retData;
 				} else {
