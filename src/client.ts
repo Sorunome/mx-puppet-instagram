@@ -6,6 +6,8 @@ import { Cookie } from "tough-cookie";
 
 const log = new Log("InstagramPuppet:client");
 
+const SEND_DELAY = 100;
+
 export class Client extends EventEmitter {
 	// tslint:disable:no-magic-numbers
 	private backoffIntervals = [
@@ -178,6 +180,7 @@ export class Client extends EventEmitter {
 					continue;
 				}
 				thread.items.reverse(); // we want to process the oldest one first
+				let sendDelay = 0;
 				for (const item of thread.items as any[]) {
 					const ts = this.igTsToNormal(item.timestamp);
 					if (oldTs >= ts) {
@@ -200,37 +203,40 @@ export class Client extends EventEmitter {
 							isPrivate: thread.thread_type === "private",
 							threadTitle: thread.thread_title,
 						} as any;
-						switch (item.item_type) {
-							case "text":
-								event.text = item.text;
-								this.emit("message", event);
-								break;
-							case "reel_share":
-								event.text = item.reel_share.text;
-								this.emit("reel_share", event, item.reel_share);
-								break;
-							case "media_share":
-								this.emit("media_share", event, item.media_share);
-								break;
-							case "media":
-								event.url = item.media.image_versions2.candidates[0].url;
-								this.emit("file", event);
-								break;
-							case "voice_media":
-								event.url = item.voice_media.media.audio.audio_src;
-								this.emit("file", event);
-								break;
-							case "like":
-								event.text = item.like;
-								this.emit("message", event);
-								break;
-							case "animated_media":
-								event.url = item.animated_media.images.fixed_height.url;
-								this.emit("file", event);
-								break;
-							default:
-								log.silly("Unknown item type", item);
-						}
+						setTimeout(() => {
+							switch (item.item_type) {
+								case "text":
+									event.text = item.text;
+									this.emit("message", event);
+									break;
+								case "reel_share":
+									event.text = item.reel_share.text;
+									this.emit("reel_share", event, item.reel_share);
+									break;
+								case "media_share":
+									this.emit("media_share", event, item.media_share);
+									break;
+								case "media":
+									event.url = item.media.image_versions2.candidates[0].url;
+									this.emit("file", event);
+									break;
+								case "voice_media":
+									event.url = item.voice_media.media.audio.audio_src;
+									this.emit("file", event);
+									break;
+								case "like":
+									event.text = item.like;
+									this.emit("message", event);
+									break;
+								case "animated_media":
+									event.url = item.animated_media.images.fixed_height.url;
+									this.emit("file", event);
+									break;
+								default:
+									log.silly("Unknown item type", item);
+							}
+						}, sendDelay);
+						sendDelay += SEND_DELAY;
 					}
 					this.lastThreadMessages[threadId] = ts;
 				}
