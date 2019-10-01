@@ -146,18 +146,26 @@ async function run() {
 				if (err instanceof IgCheckpointError) {
 					log.verbose("Requesting \"it was me\" button");
 					log.verbose(igc.state.checkpoint); // Checkpoint info here
-					await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
-					log.verbose(igc.state.checkpoint); // Challenge info here
+					
 					retData.error = "Please send a message after you hit the \"it was me\" button:";
 					retData.fn = async (message: string) => {
 						const newRetData = {
 							success: false,
 						} as IRetData;
 
-						const ret = await igc.account.login(username, password);
+						await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
+						log.verbose(igc.state.checkpoint); // Challenge info here
 
-						log.verbose(ret);
-						return await getSessionCookie(newRetData);
+						try {
+							const ret = await igc.account.login(username, password);
+							
+							log.verbose(ret);
+							return await getSessionCookie(newRetData);
+						} catch (err) {
+							log.warn(err);
+							newRetData.error = err;
+							return newRetData;
+						}
 					};
 					return retData;
 				} else if (err instanceof IgLoginTwoFactorRequiredError) {
