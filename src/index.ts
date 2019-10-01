@@ -146,18 +146,18 @@ async function run() {
 				if (err instanceof IgCheckpointError) {
 					log.verbose("Requesting \"it was me\" button");
 					log.verbose(igc.state.checkpoint); // Checkpoint info here
+					await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
+					log.verbose(igc.state.checkpoint); // Challenge info here
 					
-					retData.error = "Please send a message after you hit the \"it was me\" button:";
-					retData.fn = async (message: string) => {
+					retData.error = "Please enter the code you were sent:";
+					retData.fn = async (code: string) => {
 						const newRetData = {
 							success: false,
 						} as IRetData;
 
-						await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
-						log.verbose(igc.state.checkpoint); // Challenge info here
 
 						try {
-							const ret = await igc.account.login(username, password);
+							const ret = await igc.challenge.sendSecurityCode(code);
 							
 							log.verbose(ret);
 							return await getSessionCookie(newRetData);
