@@ -1,9 +1,9 @@
 import {
 	PuppetBridge,
-	IPuppetBridgeFeatures,
 	IPuppetBridgeRegOpts,
 	Log,
 	IRetData,
+	IProtocolInformation,
 } from "mx-puppet-bridge";
 import * as commandLineArgs from "command-line-args";
 import * as commandLineUsage from "command-line-usage";
@@ -42,12 +42,17 @@ if (options.help) {
 	process.exit(0);
 }
 
-const features = {
-	image: true,
-	file: true,
-} as IPuppetBridgeFeatures;
+const protocol = {
+	features: {
+		image: true,
+		file: true,
+	},
+	id: "instagram",
+	displayname: "Instagram",
+	externalUrl: "https://www.instagram.com/",
+} as IProtocolInformation;
 
-const puppet = new PuppetBridge(options["registration-file"], options.config, features);
+const puppet = new PuppetBridge(options["registration-file"], options.config, protocol);
 
 if (options.register) {
 	// okay, all we have to do is generate a registration file
