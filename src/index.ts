@@ -89,7 +89,7 @@ async function run() {
 		}
 		return s;
 	});
-	puppet.setGetDastaFromStrHook(async (str: string): Promise<IRetData> => {
+	puppet.setGetDataFromStrHook(async (str: string): Promise<IRetData> => {
 		const retData = {
 			success: false,
 		} as IRetData;
@@ -153,17 +153,16 @@ async function run() {
 					log.verbose(igc.state.checkpoint); // Checkpoint info here
 					await igc.challenge.auto(true); // Requesting sms-code or click "It was me" button
 					log.verbose(igc.state.checkpoint); // Challenge info here
-					
+
 					retData.error = "Please enter the code you were sent:";
 					retData.fn = async (code: string) => {
 						const newRetData = {
 							success: false,
 						} as IRetData;
 
-
 						try {
 							const ret = await igc.challenge.sendSecurityCode(code);
-							
+
 							log.verbose(ret);
 							return await getSessionCookie(newRetData);
 						} catch (err) {
@@ -186,7 +185,6 @@ async function run() {
 							success: false,
 						} as IRetData;
 						log.verbose(code);
-
 
 						try {
 							let ret;
