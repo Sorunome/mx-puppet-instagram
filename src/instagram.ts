@@ -4,7 +4,7 @@ import {
 	IReceiveParams,
 	IMessageEvent,
 	IRemoteUser,
-	IRemoteChan,
+	IRemoteRoom,
 	IFileEvent,
 	Util,
 } from "mx-puppet-bridge";
@@ -34,7 +34,7 @@ export class Instagram {
 			eventId = msg.eventId;
 		}
 		return {
-			chan: {
+			room: {
 				roomId: msg.threadId,
 				puppetId,
 				isDirect: msg.isPrivate,
@@ -157,7 +157,7 @@ export class Instagram {
 		delete this.puppets[puppetId];
 	}
 
-	public async handleMatrixMessage(room: IRemoteChan, data: IMessageEvent, event: any) {
+	public async handleMatrixMessage(room: IRemoteRoom, data: IMessageEvent, event: any) {
 		const p = this.puppets[room.puppetId];
 		if (!p) {
 			return;
@@ -169,7 +169,7 @@ export class Instagram {
 		}
 	}
 
-	public async handleMatrixImage(room: IRemoteChan, data: IFileEvent, event: any) {
+	public async handleMatrixImage(room: IRemoteRoom, data: IFileEvent, event: any) {
 		const p = this.puppets[room.puppetId];
 		if (!p) {
 			return;
@@ -182,7 +182,7 @@ export class Instagram {
 		}
 	}
 
-	public async handleMatrixFile(room: IRemoteChan, data: IFileEvent, event: any) {
+	public async handleMatrixFile(room: IRemoteRoom, data: IFileEvent, event: any) {
 		const p = this.puppets[room.puppetId];
 		if (!p) {
 			return;
