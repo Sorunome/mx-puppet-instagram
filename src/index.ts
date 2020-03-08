@@ -9,8 +9,8 @@ import * as commandLineArgs from "command-line-args";
 import * as commandLineUsage from "command-line-usage";
 import { Instagram } from "./instagram";
 import { IgApiClient, IgCheckpointError, IgLoginTwoFactorRequiredError } from "instagram-private-api";
-import { Cookie } from "tough-cookie";
 import { get } from "lodash";
+import { fillCookieJar, getSessionCookie } from "./login";
 
 const log = new Log("InstagramPuppet:index");
 
@@ -101,40 +101,9 @@ async function run() {
 		}
 
 		const igc = new IgApiClient();
-		const getSessionCookie = async (sessRetData: IRetData): Promise<IRetData> => {
-			const sessionidCookie = (await igc.state.serializeCookieJar()).cookies.find((c) => {
-				return c.key === "sessionid";
-			});
-			if (!sessionidCookie || !sessionidCookie.value) {
-				sessRetData.error = "Invalid session id";
-				return sessRetData;
-			}
-			sessRetData.success = true;
-			sessRetData.data = {
-				sessionid: sessionidCookie.value,
-			};
-			return sessRetData;
-		};
 		if (parts[0] === "sessionid") {
 			const sessionid = parts[1];
-			const cookies = {
-				storeType: "MemoryCookieStore",
-				rejectPublicSuffixes: true,
-				cookies: [
-					new Cookie({
-						key: "sessionid",
-						value: sessionid,
-						domain: "instagram.com",
-						path: "/",
-						secure: true,
-						httpOnly: true,
-						hostOnly: false,
-						maxAge: 31536000,
-						creation: new Date(),
-					}),
-				],
-			};
-			await igc.state.deserializeCookieJar(JSON.stringify(cookies));
+			await fillCookieJar(igc, sessionid);
 		} else {
 			log.verbose("Using username");
 			const username = parts[0];
@@ -164,7 +133,7 @@ async function run() {
 							const ret = await igc.challenge.sendSecurityCode(code);
 
 							log.verbose(ret);
-							return await getSessionCookie(newRetData);
+							return await getSessionCookie(igc, newRetData);
 						} catch (err) {
 							log.warn(err);
 							newRetData.error = err;
@@ -206,7 +175,7 @@ async function run() {
 								});
 							}
 							log.verbose(ret);
-							return await getSessionCookie(newRetData);
+							return await getSessionCookie(igc, newRetData);
 						} catch (err) {
 							log.warn(err);
 							newRetData.error = err;
@@ -220,7 +189,7 @@ async function run() {
 				}
 			}
 		}
-		return await getSessionCookie(retData);
+		return await getSessionCookie(igc, retData);
 	});
 	puppet.setBotHeaderMsgHook((): string => {
 		return "Instagram Puppet Bridge";
