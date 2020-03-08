@@ -136,13 +136,13 @@ export class InstagramProvisioningAPI {
 
 	private async finishLogin(userId: string, res: Response) {
 		const igc = this.popClient(userId);
-		const data = await getSessionCookie(igc, {
+		const rs = await getSessionCookie(igc, {
 			success: false,
 		});
-		if (!data.success) {
-			res.status(FORBIDDEN).json(data);
+		if (!rs.success) {
+			res.status(FORBIDDEN).json(res);
 		} else {
-			const puppetId = await this.puppet.provisioner.new(userId, data as any);
+			const puppetId = await this.puppet.provisioner.new(userId, rs.data as any);
 			res.status(CREATED).json({ puppet_id: puppetId });
 		}
 	}
