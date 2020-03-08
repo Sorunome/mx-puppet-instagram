@@ -10,6 +10,7 @@ import {
 } from "mx-puppet-bridge";
 import { Client } from "./client";
 import * as escapeHtml from "escape-html";
+import { InstagramProvisioningAPI } from "./api";
 
 const log = new Log("InstagramPuppet:instagram");
 
@@ -24,9 +25,12 @@ interface IInstagramPuppets {
 
 export class Instagram {
 	private puppets: IInstagramPuppets = {};
+	private provisioningAPI: InstagramProvisioningAPI;
 	constructor(
 		private puppet: PuppetBridge,
-	) { }
+	) {
+		this.provisioningAPI = new InstagramProvisioningAPI(puppet);
+	}
 
 	public getSendParams(puppetId: number, msg: any): IReceiveParams {
 		let eventId: string | undefined;
