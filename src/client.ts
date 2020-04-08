@@ -1,5 +1,7 @@
 import { Log } from "mx-puppet-bridge";
-import { IgApiClient, DirectInboxFeed, IgLoginRequiredError } from "instagram-private-api";
+import {
+	IgApiClient, DirectInboxFeed, IgLoginRequiredError, DirectThreadRepositoryBroadcastResponsePayload,
+} from "instagram-private-api";
 import { EventEmitter } from "events";
 import * as Jimp from "jimp";
 import { Cookie } from "tough-cookie";
@@ -109,8 +111,12 @@ export class Client extends EventEmitter {
 		if (!ret) {
 			return null;
 		}
-		this.sentEvents.push(ret.item_id);
-		return ret.item_id;
+		const id = (ret as DirectThreadRepositoryBroadcastResponsePayload).item_id;
+		if (id) {
+			this.sentEvents.push(id);
+			return id;
+		}
+		return null;
 	}
 
 	public async sendPhoto(threadId: string, file: Buffer): Promise<string | null> {
@@ -125,8 +131,12 @@ export class Client extends EventEmitter {
 		if (!ret) {
 			return null;
 		}
-		this.sentEvents.push(ret.item_id);
-		return ret.item_id;
+		const id = (ret as DirectThreadRepositoryBroadcastResponsePayload).item_id;
+		if (id) {
+			this.sentEvents.push(id);
+			return id;
+		}
+		return null;
 	}
 
 	public async sendLink(threadId: string, name: string, url: string): Promise<string | null> {
@@ -135,8 +145,12 @@ export class Client extends EventEmitter {
 		if (!ret) {
 			return null;
 		}
-		this.sentEvents.push(ret.item_id);
-		return ret.item_id;
+		const id = (ret as DirectThreadRepositoryBroadcastResponsePayload).item_id;
+		if (id) {
+			this.sentEvents.push(id);
+			return id;
+		}
+		return null;
 	}
 
 	private igTsToNormal(ts: string): number {
