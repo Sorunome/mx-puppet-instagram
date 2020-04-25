@@ -169,7 +169,7 @@ export class Instagram {
 		log.verbose("Got message to send on");
 		const eventId = await p.client.sendMessage(room.roomId, data.body);
 		if (eventId) {
-			await this.puppet.eventStore.insert(room.puppetId, data.eventId!, eventId);
+			await this.puppet.eventSync.insert(room, data.eventId!, eventId);
 		}
 	}
 
@@ -182,7 +182,7 @@ export class Instagram {
 		const buffer = await Util.DownloadFile(data.url);
 		const eventId = await p.client.sendPhoto(room.roomId, buffer);
 		if (eventId) {
-			await this.puppet.eventStore.insert(room.puppetId, data.eventId!, eventId);
+			await this.puppet.eventSync.insert(room, data.eventId!, eventId);
 		}
 	}
 
@@ -196,7 +196,7 @@ export class Instagram {
 		const name = data.filename;
 		const eventId = await p.client.sendLink(room.roomId, name, url);
 		if (eventId) {
-			await this.puppet.eventStore.insert(room.puppetId, data.eventId!, eventId);
+			await this.puppet.eventSync.insert(room, data.eventId!, eventId);
 		}
 	}
 }
