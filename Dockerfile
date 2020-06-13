@@ -31,6 +31,6 @@ COPY --from=builder /opt/mx-puppet-instagram/node_modules/ ./node_modules/
 COPY --from=builder /opt/mx-puppet-instagram/build/ ./build/
 
 # change workdir to /data so relative paths in the config.yaml
-# point to the persisten volume
+# point to the persistent volume
 WORKDIR /data
 ENTRYPOINT ["/opt/mx-puppet-instagram/docker-run.sh"]
