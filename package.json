@@ -11,6 +11,10 @@
   },
   "author": "Sorunome",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sorunome/mx-puppet-instagram.git"
+  },
   "dependencies": {
     "command-line-args": "^5.1.1",
     "command-line-usage": "^5.0.5",
