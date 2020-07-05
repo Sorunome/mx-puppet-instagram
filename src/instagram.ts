@@ -148,7 +148,7 @@ export class Instagram {
 			log.warn("Failed to connect to client", err);
 			await this.puppet.sendStatusMessage(puppetId, err);
 			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
-				` Please use \`relink ${puppetId} <username> <password>` to log in again!`);
+				` Please use \`relink ${puppetId} <username> <password>\` to log in again!`);
 		}
 	}
 
