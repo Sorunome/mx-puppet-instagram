@@ -115,9 +115,13 @@ export class Instagram {
 			log.verbose("Got a media share to pass on");
 			const imgUrl = share.image_versions2.candidates[0].url;
 			const params = this.getSendParams(puppetId, msg);
+			const mediaWebUrl = `https://www.instagram.com/p/${share.code}`;
+			const user = share.user.username;
+			const userWebUrl = `http://www.instagram.com/${user}/`;
 
 			await this.puppet.sendMessage(params, {
-				body: "New media has been shared:",
+				body: `New media by ${user} has been shared: ${mediaWebUrl}`,
+				formattedBody: `New media by <a href="${userWebUrl}">${user}</a> has been shared: <a href="${mediaWebUrl}">${mediaWebUrl}</a>`,
 			});
 			await this.puppet.sendFileDetect(params, imgUrl);
 			await this.puppet.sendMessage(params, {
