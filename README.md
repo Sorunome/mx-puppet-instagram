@@ -13,7 +13,7 @@ The following config assumes bridge and synapse is running on the same host/cont
 ````shell
 # install global dependencies
 # NodeJS version 12 or newer required for sqlite3 support!
-apt install sqlite3 nodejs wget
+sudo apt install sqlite3 nodejs wget
 
 # obtain bridge
 mkdir -p $HOME/bridges
