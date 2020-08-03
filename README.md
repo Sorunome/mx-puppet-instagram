@@ -36,7 +36,7 @@ npm start -r
 sudo cp instagram-registration.yaml /etc/matrix-synapse/
 sudo chown matrix-synapse /etc/matrix-synapse/instagram-registration.yaml 
 
-# manually add registration to synapse daemon. adapat as needed
+# manually add registration to synapse daemon. adapt as needed
 sudo nano /etc/matrix-synapse/homeserver.yaml 
 
 # restart matrix daemon
