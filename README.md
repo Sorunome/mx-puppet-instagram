@@ -29,10 +29,10 @@ nano config.yaml
 npm install
 
 # compile typescript-code to javascript
-./node_modules/.bin/tsc
+npm run build
 
 # generate registration file, deploy. adapt as needed
-node ./build/index.js -r
+npm start -r
 sudo cp instagram-registration.yaml /etc/matrix-synapse/
 sudo chown matrix-synapse /etc/matrix-synapse/instagram-registration.yaml 
 
@@ -43,7 +43,7 @@ sudo nano /etc/matrix-synapse/homeserver.yaml
 sudo systemctl restart matrix-synapse
 
 # run actual bridge
-node ./build/index.js
+npm start
 
 # Out of scope: make it run as a persistent daemon/service/systemd-unit
 ````
