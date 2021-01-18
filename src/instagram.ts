@@ -87,6 +87,7 @@ export class Instagram {
 			await this.puppet.setUserId(puppetId, user.userId);
 			await this.puppet.setPuppetData(puppetId, d);
 			await this.puppet.sendStatusMessage(puppetId, "connected!");
+			this.puppet.trackConnectionStatus(puppetId, true);
 		});
 		client.on("message", async (msg: any) => {
 			log.verbose("Got message to pass on", msg);
@@ -141,6 +142,7 @@ export class Instagram {
 		client.on("logout", async () => {
 			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
 				` Please use \`relink ${puppetId} <username> <password\` to log in again!`);
+			this.puppet.trackConnectionStatus(puppetId, false);
 		});
 		try {
 			await client.connect();
@@ -149,6 +151,7 @@ export class Instagram {
 			await this.puppet.sendStatusMessage(puppetId, err);
 			await this.puppet.sendStatusMessage(puppetId, `**disconnected!** You have been logged out!` +
 				` Please use \`relink ${puppetId} <username> <password>\` to log in again!`);
+			this.puppet.trackConnectionStatus(puppetId, false);
 		}
 	}
 
