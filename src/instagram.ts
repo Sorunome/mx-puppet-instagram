@@ -126,7 +126,7 @@ export class Instagram {
 
 			await this.puppet.sendMessage(params, {
 				body: `New media by ${user} has been shared: ${mediaWebUrl}`,
-				formattedBody: `New media by <a href="${userWebUrl}">${user}</a> has been shared: <a href="${mediaWebUrl}">${mediaWebUrl}</a>`,
+				formattedBody: `New media by <a href="${escapeHtml(userWebUrl)}">${escapeHtml(user)}</a> has been shared: <a href="${escapeHtml(mediaWebUrl)}">${escapeHtml(mediaWebUrl)}</a>`,
 			});
 			await this.puppet.sendFileDetect(params, imgUrl);
 			await this.puppet.sendMessage(params, {
