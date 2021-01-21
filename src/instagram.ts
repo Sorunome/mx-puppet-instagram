@@ -113,7 +113,12 @@ export class Instagram {
 		});
 		client.on("media_share", async (msg: any, share: any) => {
 			log.verbose("Got a media share to pass on");
-			const imgUrl = share.image_versions2.candidates[0].url;
+			let imgUrl;
+			try {
+				imgUrl = share.image_versions2.candidates[0].url;
+			} catch (err) {
+				imgUrl = share.carousel_media[0].image_versions2.candidates[0].url;
+			}
 			const params = this.getSendParams(puppetId, msg);
 
 			await this.puppet.sendMessage(params, {
