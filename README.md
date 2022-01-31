@@ -32,7 +32,7 @@ npm install
 npm run build
 
 # generate registration file, deploy. adapt as needed
-npm start -r
+npm start -- -r
 sudo cp instagram-registration.yaml /etc/matrix-synapse/
 sudo chown matrix-synapse /etc/matrix-synapse/instagram-registration.yaml 
 
